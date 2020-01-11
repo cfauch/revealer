@@ -12,21 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer;
+package com.code.fauch.revealer.query;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Objects;
-
-import com.code.fauch.revealer.query.IQuery;
-import com.code.fauch.revealer.query.QAnd;
-import com.code.fauch.revealer.query.QEq;
-import com.code.fauch.revealer.query.QIn;
-import com.code.fauch.revealer.query.QNot;
-import com.code.fauch.revealer.query.QNotEq;
-import com.code.fauch.revealer.query.QNotIn;
-import com.code.fauch.revealer.query.QOr;
 
 /**
  * Query builder
@@ -153,18 +144,7 @@ public final class BQuery {
      * @return this builder
      */
     public static BQuery in(final String sqlType, final String arg, final Object[] elt) {
-        return new BQuery(new QIn<Object>(sqlType, "number", elt));
-    }
-    
-    /**
-     * Build 'not in' query.
-     * 
-     * @param arg the name of the column to test (not null)
-     * @param elt the unexpected values (not null)
-     * @return this builder
-     */
-    public static BQuery notIn(final String sqlType, final String arg, final Object[] elt) {
-        return new BQuery(new QNotIn<Object>(sqlType, "number", elt));
+        return new BQuery(new QIn<Object>(sqlType, arg, elt));
     }
     
 }

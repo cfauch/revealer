@@ -24,7 +24,7 @@ import java.sql.SQLException;
  * @author c.fauch
  *
  */
-public interface IQuery {
+interface IQuery {
 
     /**
      * Returns an SQL statement that may contain one or more '?' IN parameter placeholders.
