@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,25 +20,25 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 /**
- * Query builder
+ * Filter builder
  * 
  * @author c.fauch
  *
  */
-public final class BQuery {
+public final class BFilter {
     
     /**
-     * Current query.
+     * Current filter.
      */
-    private IQuery query;
+    private IFilter filter;
     
     /**
      * Constructor.
      * 
-     * @param query current query (not null)
+     * @param filter current filter (not null)
      */
-    private BQuery(final IQuery query) {
-        this.query = query;
+    private BFilter(final IFilter filter) {
+        this.filter = filter;
     }
 
     /**
@@ -47,7 +47,7 @@ public final class BQuery {
      * @return SQL statement
      */
     public String sql() {
-        return this.query.sql();
+        return this.filter.sql();
     }
     
     /**
@@ -59,39 +59,39 @@ public final class BQuery {
      */
     public void prepareStatement(final Connection conn, final PreparedStatement statement) 
         throws SQLException {
-        this.query.prepareStatement(1, conn, statement);
+        this.filter.prepareStatement(1, conn, statement);
     }
     
     /**
-     * Build 'and' operation between current query and an other one.
+     * Build 'and' operation between current filter and an other one.
      * 
      * @param query the other query (not null)
      * @return this builder
      */
-    public BQuery and(final BQuery query) {
-        this.query = new QAnd(this.query, Objects.requireNonNull(query, "query is mandatory").query);
+    public BFilter and(final BFilter filter) {
+        this.filter = new FAnd(this.filter, Objects.requireNonNull(filter, "filter is mandatory").filter);
         return this;
     }
     
     /**
-     * Build 'or' operation between current query and an other one.
+     * Build 'or' operation between current filter and an other one.
      * 
      * @param query the other query (not null)
      * @return this builder
      */
-    public BQuery or(final BQuery query) {
-        this.query = new QOr(this.query, Objects.requireNonNull(query, "query is mandatory").query);
+    public BFilter or(final BFilter filter) {
+        this.filter = new FOr(this.filter, Objects.requireNonNull(filter, "filter is mandatory").filter);
         return this;
     }
     
     /**
-     * Build 'not' operation with the given query
+     * Build 'not' operation with the given filter
      * 
-     * @param query the query (not null)
+     * @param filter the filter (not null)
      * @return this builder
      */
-    public static BQuery not(final BQuery query) {
-        return new BQuery(new QNot(Objects.requireNonNull(query, "query is mandatory").query));
+    public static BFilter not(final BFilter filter) {
+        return new BFilter(new FNot(Objects.requireNonNull(filter, "filter is mandatory").filter));
     }
 
     /**
@@ -100,8 +100,8 @@ public final class BQuery {
      * @param arg the column name to test (not null)
      * @return this builder
      */
-    public static BQuery isNull(final String arg) {
-        return new BQuery(new QEq<Void>(Void.class, arg, null));
+    public static BFilter isNull(final String arg) {
+        return new BFilter(new FEq<Void>(Void.class, arg, null));
     }
     
     /**
@@ -110,41 +110,41 @@ public final class BQuery {
      * @param arg the column name to test (not null)
      * @return this builder
      */
-    public static BQuery isNotNull(final String arg) {
-        return new BQuery(new QNotEq<Void>(Void.class, arg, null));
+    public static BFilter isNotNull(final String arg) {
+        return new BFilter(new FNotEq<Void>(Void.class, arg, null));
     }
     
     /**
-     * Build '=' query.
+     * Build '=' filter.
      * 
      * @param arg column name to test (not null)
      * @param value the expected value (not null)
      * @return this builder
      */
-    public static BQuery equal(final String arg, final Object value) {
-        return new BQuery(new QEq<Object>(Objects.requireNonNull(value, "value is mandatory").getClass(), arg, value));
+    public static BFilter equal(final String arg, final Object value) {
+        return new BFilter(new FEq<Object>(Objects.requireNonNull(value, "value is mandatory").getClass(), arg, value));
     }
     
     /**
-     * Build '!=' query.
+     * Build '!=' filter.
      * 
      * @param arg column name to test (not null)
      * @param value the unexpected value (not null)
      * @return this builder
      */
-    public static BQuery notEqual(final String arg, final Object value) {
-        return new BQuery(new QNotEq<Object>(Objects.requireNonNull(value, "value is mandatory").getClass(), arg, value));
+    public static BFilter notEqual(final String arg, final Object value) {
+        return new BFilter(new FNotEq<Object>(Objects.requireNonNull(value, "value is mandatory").getClass(), arg, value));
     }
     
     /**
-     * Build 'in' query.
+     * Build 'in' filter.
      * 
      * @param arg the name of the column to test (not null)
      * @param elt the expected values (not null)
      * @return this builder
      */
-    public static BQuery in(final String sqlType, final String arg, final Object[] elt) {
-        return new BQuery(new QIn<Object>(sqlType, arg, elt));
+    public static BFilter in(final String sqlType, final String arg, final Object[] elt) {
+        return new BFilter(new FIn<Object>(sqlType, arg, elt));
     }
     
 }

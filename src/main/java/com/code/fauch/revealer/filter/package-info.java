@@ -12,31 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
-
 /**
- * Or query operation.
- * 
  * @author c.fauch
  *
  */
-public final class QOr extends AQOp {
-
-    private static final String OPERATOR = "OR";
-    
-    /**
-     * Constructor.
-     * 
-     * @param query1 left query (not null)
-     * @param query2 right query (not null)
-     */
-    public QOr(final IQuery query1, final IQuery query2) {
-        super(query1, query2);
-    }
-
-    @Override
-    String getOperator() {
-        return OPERATOR;
-    }
-
-}
+package com.code.fauch.revealer.filter;

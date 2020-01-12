@@ -12,8 +12,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.code.fauch.revealer.filter;
+
 /**
+ * In filter implementation.
+ * 
  * @author c.fauch
  *
  */
-package com.code.fauch.revealer.query;
+public final class FIn<T> extends AFIn<T> {
+
+    private static final String TPL = "%s=ANY(?)";
+    
+    /**
+     * Constructor.
+     * 
+     * @param sqlType SQL type of the column (not null)
+     * @param arg the column name of the parameter (not null)
+     * @param elts the values (not null)
+     */
+    public FIn(String sqlType, String arg, T[] elts) {
+        super(sqlType, arg, elts);
+    }
+
+    @Override
+    String getTpl() {
+        return TPL;
+    }
+
+}

@@ -12,26 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 /**
- * And query operation.
+ * And operation.
  * 
  * @author c.fauch
  *
  */
-public final class QAnd extends AQOp {
+public final class FAnd extends AFOp {
 
     private static final String OPERATOR = "AND";
     
     /**
      * Constructor.
      * 
-     * @param query1 left query (not null)
-     * @param query2 right query (not null)
+     * @param filter1 left query (not null)
+     * @param filter2 right query (not null)
      */
-    public QAnd(final IQuery query1, final IQuery query2) {
-        super(query1, query2);
+    public FAnd(final IFilter filter1, final IFilter filter2) {
+        super(filter1, filter2);
     }
 
     @Override

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -26,22 +26,24 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.code.fauch.revealer.filter.FEq;
+
 /**
  * @author c.fauch
  *
  */
-public class QNotEqTest {
-
+public class FEqTest {
+    
     private static String url;
     
     @BeforeClass
     public static void beforeClass() throws URISyntaxException {
-        url= QEqTest.class.getResource("/dataset/hx.mv.db").toURI().resolve("hx").getPath();
+        url= FEqTest.class.getResource("/dataset/hx.mv.db").toURI().resolve("hx").getPath();
     }
 
     @Test
-    public void testNotEqString() throws URISyntaxException, SQLException {
-        final QNotEq<String> cmd = new QNotEq<>(String.class, "name", "mathusalem");
+    public void testEqString() throws URISyntaxException, SQLException {
+        final FEq<String> cmd = new FEq<>(String.class, "name", "mathusalem");
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
@@ -49,31 +51,15 @@ public class QNotEqTest {
             int count = 0;
             while(result.next()) {
                 count++;
-                Assert.assertNotEquals("mathusalem", result.getString("name"));
+                Assert.assertEquals("mathusalem", result.getString("name"));
             }
-            Assert.assertEquals(3, count);
-        }
-    }
-    
-    @Test
-    public void testNotEqVoid() throws URISyntaxException, SQLException {
-        final QNotEq<Void> cmd = new QNotEq<>(Void.class, "age", null);
-        try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
-            final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", cmd.sql()));
-            cmd.prepareStatement(1, conn, prep);
-            final ResultSet result = prep.executeQuery();
-            int count = 0;
-            while(result.next()) {
-                count++;
-                Assert.assertNotEquals("mathusalem", result.getString("name"));
-            }
-            Assert.assertEquals(3, count);
+            Assert.assertEquals(1, count);
         }
     }
 
     @Test
-    public void testNotEqUUID() throws URISyntaxException, SQLException {
-        final QNotEq<UUID> cmd = new QNotEq<>(UUID.class, "id", UUID.fromString("00000000-0000-0000-0000-000000000002"));
+    public void testEqVoid() throws URISyntaxException, SQLException {
+        final FEq<Void> cmd = new FEq<>(Void.class, "age", null);
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
@@ -81,26 +67,54 @@ public class QNotEqTest {
             int count = 0;
             while(result.next()) {
                 count++;
-                Assert.assertNotEquals("porco rosso", result.getString("name"));
+                Assert.assertEquals("mathusalem", result.getString("name"));
+                result.getInt("age");
+                Assert.assertTrue(result.wasNull());
             }
-            Assert.assertEquals(3, count);
+            Assert.assertEquals(1, count);
+        }
+    }
+
+    @Test
+    public void testEqUUID() throws URISyntaxException, SQLException {
+        final FEq<UUID> cmd = new FEq<>(UUID.class, "id", UUID.fromString("00000000-0000-0000-0000-000000000002"));
+        try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
+            final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", cmd.sql()));
+            cmd.prepareStatement(1, conn, prep);
+            final ResultSet result = prep.executeQuery();
+            int count = 0;
+            while(result.next()) {
+                count++;
+                Assert.assertEquals("porco rosso", result.getString("name"));
+            }
+            Assert.assertEquals(1, count);
         }
     }
     
     @Test
-    public void testNotEqBool() throws URISyntaxException, SQLException {
-        final QNotEq<Boolean> cmd = new QNotEq<>(Boolean.class, "active", true);
+    public void testEqBool() throws URISyntaxException, SQLException {
+        final FEq<Boolean> cmd = new FEq<>(Boolean.class, "active", true);
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
             final ResultSet result = prep.executeQuery();
             int count = 0;
-            String[] expectedName = new String [] {"porco rosso", "mathusalem"};
+            String[] expectedName = new String [] {"totoro", "jesus"};
             while(result.next()) {
                 Assert.assertEquals(expectedName[count++], result.getString("name"));
             }
             Assert.assertEquals(2, count);
         }
+    }
+    
+    @Test(expected = NullPointerException.class)
+    public void testEqNullClass() throws URISyntaxException, SQLException {
+        new FEq<>(null, "name", "mathusalem");
+    }
+    
+    @Test(expected = NullPointerException.class)
+    public void testEqNullArg() throws URISyntaxException, SQLException {
+        new FEq<>(String.class, null, "mathusalem");
     }
     
 }

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -26,73 +26,79 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.code.fauch.revealer.filter.FEq;
+import com.code.fauch.revealer.filter.FIn;
+import com.code.fauch.revealer.filter.FNot;
+import com.code.fauch.revealer.filter.FOr;
+
 /**
  * @author c.fauch
  *
  */
-public class QAndTest {
-
+public class FOrTest {
+    
     private static String url;
     
     @BeforeClass
     public static void beforeClass() throws URISyntaxException {
-        url= QEqTest.class.getResource("/dataset/hx.mv.db").toURI().resolve("hx").getPath();
+        url= FEqTest.class.getResource("/dataset/hx.mv.db").toURI().resolve("hx").getPath();
     }
 
     @Test
-    public void testEqAnd() throws URISyntaxException, SQLException {
-        final QAnd cmd = new QAnd(
-                new QEq<>(Boolean.class, "active", true),
-                new QEq<>(Void.class, "age", null)
+    public void testEqOr() throws URISyntaxException, SQLException {
+        final FOr cmd = new FOr(
+                new FEq<>(Boolean.class, "active", true),
+                new FEq<>(Void.class, "age", null)
         );
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
-            final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", cmd.sql()));
+            final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
             final ResultSet result = prep.executeQuery();
             int count = 0;
+            final String[] expected = new String[] {"totoro", "mathusalem", "jesus"};
             while(result.next()) {
-                count++;
+                Assert.assertEquals(expected[count++], result.getString("name"));
             }
-            Assert.assertEquals(0, count);
+            Assert.assertEquals(3, count);
         }
     }
 
     @Test
-    public void testEqAndNotIn() throws URISyntaxException, SQLException {
+    public void testEqOrNotIn() throws URISyntaxException, SQLException {
         final UUID[] ids = new UUID[] {
                 UUID.fromString("00000000-0000-0000-0000-000000000001"),
                 UUID.fromString("00000000-0000-0000-0000-000000000002"),
                 UUID.fromString("00000000-0000-0000-0000-000000000003")
         };
-        final QAnd cmd = new QAnd(
-                new QEq<>(Boolean.class, "active", true),
-                new QNot(new QIn<UUID>("UUID", "id", ids))
+        final FOr cmd = new FOr(
+                new FEq<>(Boolean.class, "active", false),
+                new FNot(new FIn<UUID>("UUID", "id", ids))
         );
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
-            final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", cmd.sql()));
+            final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
             final ResultSet result = prep.executeQuery();
             int count = 0;
+            final String[] expected = new String[] {"porco rosso", "mathusalem", "jesus"};
             while(result.next()) {
-                count++;
-                Assert.assertEquals("jesus", result.getString("name"));
+                Assert.assertEquals(expected[count++], result.getString("name"));
             }
-            Assert.assertEquals(1, count);
+            Assert.assertEquals(3, count);
         }
     }
-
+    
     @Test(expected=NullPointerException.class)
-    public void testEqAndNullQuery1() throws URISyntaxException, SQLException {
-        new QAnd(
+    public void testEqOrNullQuery1() throws URISyntaxException, SQLException {
+        new FOr(
                 null,
-                new QEq<>(Void.class, "age", null)
+                new FEq<>(Void.class, "age", null)
         );
     }
     
     @Test(expected=NullPointerException.class)
-    public void testEqAndNullQuery2() throws URISyntaxException, SQLException {
-        new QAnd(
-                new QEq<>(Boolean.class, "active", true),
+    public void testEqOrNullQuery2() throws URISyntaxException, SQLException {
+        new FOr(
+                new FEq<>(Boolean.class, "active", true),
                 null
         );
     }

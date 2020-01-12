@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -26,76 +26,86 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.code.fauch.revealer.filter.FIn;
+
 /**
  * @author c.fauch
  *
  */
-public class QOrTest {
-    
+public class FInTest {
+
     private static String url;
     
     @BeforeClass
     public static void beforeClass() throws URISyntaxException {
-        url= QEqTest.class.getResource("/dataset/hx.mv.db").toURI().resolve("hx").getPath();
+        url= FEqTest.class.getResource("/dataset/hx.mv.db").toURI().resolve("hx").getPath();
     }
 
     @Test
-    public void testEqOr() throws URISyntaxException, SQLException {
-        final QOr cmd = new QOr(
-                new QEq<>(Boolean.class, "active", true),
-                new QEq<>(Void.class, "age", null)
-        );
+    public void testInString() throws SQLException {
+        final String[] expected = new String[] {"mathusalem", "jesus"};
+        final FIn<String> cmd = new FIn<>("VARCHAR", "name", expected);
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
             final ResultSet result = prep.executeQuery();
             int count = 0;
-            final String[] expected = new String[] {"totoro", "mathusalem", "jesus"};
             while(result.next()) {
                 Assert.assertEquals(expected[count++], result.getString("name"));
             }
-            Assert.assertEquals(3, count);
+            Assert.assertEquals(2, count);
         }
     }
 
     @Test
-    public void testEqOrNotIn() throws URISyntaxException, SQLException {
-        final UUID[] ids = new UUID[] {
-                UUID.fromString("00000000-0000-0000-0000-000000000001"),
+    public void testInUUID() throws SQLException {
+        final UUID[] expected = new UUID[] {
                 UUID.fromString("00000000-0000-0000-0000-000000000002"),
                 UUID.fromString("00000000-0000-0000-0000-000000000003")
         };
-        final QOr cmd = new QOr(
-                new QEq<>(Boolean.class, "active", false),
-                new QNot(new QIn<UUID>("UUID", "id", ids))
-        );
+        final FIn<UUID> cmd = new FIn<>("UUID", "id", expected);
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
             final ResultSet result = prep.executeQuery();
             int count = 0;
-            final String[] expected = new String[] {"porco rosso", "mathusalem", "jesus"};
+            while(result.next()) {
+                Assert.assertEquals(expected[count++].toString(), result.getString("id").toString());
+            }
+            Assert.assertEquals(2, count);
+        }
+    }
+
+    @Test
+    public void testInBool() throws SQLException {
+        final FIn<Boolean> cmd = new FIn<>("BOOLEAN", "active", new Boolean[] {true});
+        try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
+            final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", cmd.sql()));
+            cmd.prepareStatement(1, conn, prep);
+            final ResultSet result = prep.executeQuery();
+            int count = 0;
+            final String[] expected = new String[] {"totoro", "jesus"};
             while(result.next()) {
                 Assert.assertEquals(expected[count++], result.getString("name"));
+                Assert.assertTrue(result.getBoolean("active"));
             }
-            Assert.assertEquals(3, count);
+            Assert.assertEquals(2, count);
         }
     }
     
-    @Test(expected=NullPointerException.class)
-    public void testEqOrNullQuery1() throws URISyntaxException, SQLException {
-        new QOr(
-                null,
-                new QEq<>(Void.class, "age", null)
-        );
+    @Test(expected = NullPointerException.class)
+    public void testEqNullSQLType() throws URISyntaxException, SQLException {
+        new FIn<>(null, "active", new Boolean[] {true});
     }
-    
-    @Test(expected=NullPointerException.class)
-    public void testEqOrNullQuery2() throws URISyntaxException, SQLException {
-        new QOr(
-                new QEq<>(Boolean.class, "active", true),
-                null
-        );
+
+    @Test(expected = NullPointerException.class)
+    public void testEqNullArg() throws URISyntaxException, SQLException {
+        new FIn<>("BOOLEAN", null, new Boolean[] {true});
     }
-    
+
+    @Test(expected = NullPointerException.class)
+    public void testEqNullElts() throws URISyntaxException, SQLException {
+        new FIn<>("BOOLEAN", "active", null);
+    }
+
 }

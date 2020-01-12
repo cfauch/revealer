@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,34 +20,34 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 /**
- * Abstract base class for query operation.
+ * Abstract base class for operation to combine filter command.
  * 
  * @author c.fauch
  *
  */
-public abstract class AQOp implements IQuery {
+public abstract class AFOp implements IFilter {
 
     private static final String TPL = "(%s) %s (%s)";
     
     /**
-     * left query.
+     * left filter command.
      */
-    private final IQuery query1;
+    private final IFilter filter1;
     
     /**
-     * right query.
+     * right filter command.
      */
-    private final IQuery query2;
+    private final IFilter filter2;
     
     /**
      * Constructor.
      * 
-     * @param query1 left query (not null)
-     * @param query2 right query (not null)
+     * @param filter1 left query (not null)
+     * @param filter2 right query (not null)
      */
-    AQOp(final IQuery query1, final IQuery query2) {
-        this.query1 = Objects.requireNonNull(query1, "query1 is mandatory");
-        this.query2 = Objects.requireNonNull(query2, "query2 is mandatory");
+    AFOp(final IFilter filter1, final IFilter filter2) {
+        this.filter1 = Objects.requireNonNull(filter1, "filter1 is mandatory");
+        this.filter2 = Objects.requireNonNull(filter2, "filter2 is mandatory");
     }
     
     /**
@@ -55,7 +55,7 @@ public abstract class AQOp implements IQuery {
      */
     @Override
     public String sql() {
-        return String.format(TPL, this.query1.sql(), getOperator(), this.query2.sql());
+        return String.format(TPL, this.filter1.sql(), getOperator(), this.filter2.sql());
     }
 
     /**
@@ -63,8 +63,8 @@ public abstract class AQOp implements IQuery {
      */
     @Override
     public int prepareStatement(int index, Connection conn, PreparedStatement statement) throws SQLException {
-        final int next = this.query1.prepareStatement(index, conn, statement);
-        return this.query2.prepareStatement(next, conn, statement); 
+        final int next = this.filter1.prepareStatement(index, conn, statement);
+        return this.filter2.prepareStatement(next, conn, statement); 
     }
     
     /**

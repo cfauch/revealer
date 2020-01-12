@@ -12,15 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 /**
- * Equal query implementation.
+ * Equal filter implementation.
  * 
  * @author c.fauch
  *
  */
-public final class QEq<T> extends AQEq<T> {
+public final class FEq<T> extends AFEq<T> {
 
     private static final String TPL = "%s=?";
     
@@ -33,7 +33,7 @@ public final class QEq<T> extends AQEq<T> {
      * @param arg the column name of the parameter (not null)
      * @param value the parameter value
      */
-    public QEq(Class<? extends T> cls, String arg, T value) {
+    public FEq(Class<? extends T> cls, String arg, T value) {
         super(cls, arg, value);
     }
     

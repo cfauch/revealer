@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,12 +20,12 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 /**
- * Abstract base class for equal/not equal query.
+ * Abstract base class for equal/not equal filter command.
  * 
  * @author c.fauch
  *
  */
-public abstract class AQEq<T> implements IQuery {
+public abstract class AFEq<T> implements IFilter {
 
     /**
      * The column name.
@@ -49,7 +49,7 @@ public abstract class AQEq<T> implements IQuery {
      * @param arg the column name of the parameter (not null)
      * @param value the parameter value
      */
-    AQEq(final Class<? extends T> cls, final String arg, final T value) {
+    AFEq(final Class<? extends T> cls, final String arg, final T value) {
         this.arg = Objects.requireNonNull(arg, "arg is missing");
         this.value = value;
         this.type = EType.from(Objects.requireNonNull(cls, "cls is mising"));

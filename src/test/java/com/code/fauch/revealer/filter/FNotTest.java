@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -26,22 +26,26 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.code.fauch.revealer.filter.FEq;
+import com.code.fauch.revealer.filter.FIn;
+import com.code.fauch.revealer.filter.FNot;
+
 /**
  * @author c.fauch
  *
  */
-public class QNotTest {
+public class FNotTest {
 
     private static String url;
     
     @BeforeClass
     public static void beforeClass() throws URISyntaxException {
-        url= QEqTest.class.getResource("/dataset/hx.mv.db").toURI().resolve("hx").getPath();
+        url= FEqTest.class.getResource("/dataset/hx.mv.db").toURI().resolve("hx").getPath();
     }
 
     @Test
     public void testNotEqString() throws URISyntaxException, SQLException {
-        final QNot cmd = new QNot(new QEq<>(String.class, "name", "mathusalem"));
+        final FNot cmd = new FNot(new FEq<>(String.class, "name", "mathusalem"));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
@@ -57,7 +61,7 @@ public class QNotTest {
 
     @Test
     public void testNotEqVoid() throws URISyntaxException, SQLException {
-        final QNot cmd = new QNot(new QEq<>(Void.class, "age", null));
+        final FNot cmd = new FNot(new FEq<>(Void.class, "age", null));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
@@ -73,7 +77,7 @@ public class QNotTest {
     
     @Test
     public void testNotEqUUID() throws URISyntaxException, SQLException {
-        final QNot cmd = new QNot(new QEq<>(UUID.class, "id", UUID.fromString("00000000-0000-0000-0000-000000000002")));
+        final FNot cmd = new FNot(new FEq<>(UUID.class, "id", UUID.fromString("00000000-0000-0000-0000-000000000002")));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
@@ -89,7 +93,7 @@ public class QNotTest {
     
     @Test
     public void testNotEqBool() throws URISyntaxException, SQLException {
-        final QNot cmd = new QNot(new QEq<>(Boolean.class, "active", true));
+        final FNot cmd = new FNot(new FEq<>(Boolean.class, "active", true));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
@@ -106,7 +110,7 @@ public class QNotTest {
     @Test
     public void testNotInString() throws SQLException {
         final String[] notExpected = new String[] {"mathusalem", "jesus"};
-        final QNot cmd = new QNot(new QIn<>("VARCHAR", "name", notExpected));
+        final FNot cmd = new FNot(new FIn<>("VARCHAR", "name", notExpected));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
@@ -126,7 +130,7 @@ public class QNotTest {
                 UUID.fromString("00000000-0000-0000-0000-000000000002"),
                 UUID.fromString("00000000-0000-0000-0000-000000000003")
         };
-        final QNot cmd = new QNot(new QIn<>("UUID", "id", notExpected));
+        final FNot cmd = new FNot(new FIn<>("UUID", "id", notExpected));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
@@ -145,7 +149,7 @@ public class QNotTest {
     
     @Test
     public void testNotInBool() throws SQLException {
-        final QNot cmd = new QNot(new QIn<>("BOOLEAN", "active", new Boolean[] {true}));
+        final FNot cmd = new FNot(new FIn<>("BOOLEAN", "active", new Boolean[] {true}));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", cmd.sql()));
             cmd.prepareStatement(1, conn, prep);
@@ -162,7 +166,7 @@ public class QNotTest {
     
     @Test(expected = NullPointerException.class)
     public void testNotNullQuery() throws URISyntaxException, SQLException {
-        new QNot(null);
+        new FNot(null);
     }
     
 }

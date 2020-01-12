@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,12 +20,12 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 /**
- * Abstract base class for in/notin query.
+ * Abstract base class for in/notin filter command.
  * 
  * @author c.fauch
  *
  */
-public abstract class AQIn<T> implements IQuery {
+public abstract class AFIn<T> implements IFilter {
 
     /**
      * In values.
@@ -49,7 +49,7 @@ public abstract class AQIn<T> implements IQuery {
      * @param arg the column name of the parameter (not null)
      * @param elts the values (not null)
      */
-    AQIn(final String sqlType, final String arg, final T[] elts) {
+    AFIn(final String sqlType, final String arg, final T[] elts) {
         this.elts = Objects.requireNonNull(elts, "elts is missing");
         this.arg = Objects.requireNonNull(arg, "arg is missing");
         this.sqlType = Objects.requireNonNull(sqlType, "sqlType is missing");

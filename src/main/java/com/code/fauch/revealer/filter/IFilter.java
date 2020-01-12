@@ -12,19 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * Interface describing the expected behavior of a query.
+ * Interface describing the expected behavior of a filter.
  * 
  * @author c.fauch
  *
  */
-interface IQuery {
+interface IFilter {
 
     /**
      * Returns an SQL statement that may contain one or more '?' IN parameter placeholders.

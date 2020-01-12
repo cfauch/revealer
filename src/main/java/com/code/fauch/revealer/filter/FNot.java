@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,43 +20,44 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 /**
- * Not operator query implementation.
+ * Not operator implementation.
  * 
  * @author c.fauch
  *
  */
-public final class QNot implements IQuery {
+public final class FNot implements IFilter {
 
     private static final String TPL = "NOT(%s)";
     
     /**
-     * The query to negate.
+     * The filter to negate.
      */
-    private final IQuery query;
+    private final IFilter filter;
     
     /**
      * Constructor.
      * 
-     * @param query the query to negate (not null)
+     * @param filter the filter to negate (not null)
      */
-    public QNot(final IQuery query) {
-        this.query = Objects.requireNonNull(query, "query is missing");
+    public FNot(final IFilter filter) {
+        this.filter = Objects.requireNonNull(filter, "filter is missing");
     }
     
     /**
-     * Format SQL template statement with query to negate.
+     * Format SQL template statement with filter to negate.
      */
     @Override
     public String sql() {
-        return String.format(TPL, this.query.sql());
+        return String.format(TPL, this.filter.sql());
     }
 
     /**
      * Delegate the prepared statement processing to the query.
      */
     @Override
-    public int prepareStatement(final int index, final Connection conn, final PreparedStatement statement) throws SQLException {
-        return this.query.prepareStatement(index, conn, statement);
+    public int prepareStatement(final int index, final Connection conn, final PreparedStatement statement) 
+            throws SQLException {
+        return this.filter.prepareStatement(index, conn, statement);
     }
     
 }

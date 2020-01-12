@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.query;
+package com.code.fauch.revealer.filter;
 
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -26,22 +26,24 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.code.fauch.revealer.filter.BFilter;
+
 /**
  * @author c.fauch
  *
  */
-public class BQueryTest {
+public class BFilterTest {
     
     private static String url;
     
     @BeforeClass
     public static void beforeClass() throws URISyntaxException {
-        url= QEqTest.class.getResource("/dataset/hx.mv.db").toURI().resolve("hx").getPath();
+        url= FEqTest.class.getResource("/dataset/hx.mv.db").toURI().resolve("hx").getPath();
     }
-
+    
     @Test
     public void testEqAnd() throws URISyntaxException, SQLException {
-        final BQuery req = BQuery.equal("active", true).and(BQuery.isNull("age"));
+        final BFilter req = BFilter.equal("active", true).and(BFilter.isNull("age"));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", req.sql()));
             req.prepareStatement(conn, prep);
@@ -61,7 +63,7 @@ public class BQueryTest {
                 UUID.fromString("00000000-0000-0000-0000-000000000002"),
                 UUID.fromString("00000000-0000-0000-0000-000000000003")
         };
-        final BQuery req = BQuery.equal("active", true).and(BQuery.not(BQuery.in("UUID", "id", ids)));
+        final BFilter req = BFilter.equal("active", true).and(BFilter.not(BFilter.in("UUID", "id", ids)));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s", req.sql()));
             req.prepareStatement(conn, prep);
@@ -77,7 +79,7 @@ public class BQueryTest {
     
     @Test
     public void testEqOr() throws URISyntaxException, SQLException {
-        final BQuery req = BQuery.equal("active", true).or(BQuery.isNull("age"));
+        final BFilter req = BFilter.equal("active", true).or(BFilter.isNull("age"));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", req.sql()));
             req.prepareStatement(conn, prep);
@@ -98,7 +100,7 @@ public class BQueryTest {
                 UUID.fromString("00000000-0000-0000-0000-000000000002"),
                 UUID.fromString("00000000-0000-0000-0000-000000000003")
         };
-        final BQuery req = BQuery.equal("active", false).or(BQuery.not(BQuery.in("UUID", "id", ids)));
+        final BFilter req = BFilter.equal("active", false).or(BFilter.not(BFilter.in("UUID", "id", ids)));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             final PreparedStatement prep = conn.prepareStatement(String.format("select * from users where %s order by id asc", req.sql()));
             req.prepareStatement(conn, prep);
