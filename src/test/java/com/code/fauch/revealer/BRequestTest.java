@@ -17,6 +17,7 @@ package com.code.fauch.revealer;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -44,63 +45,53 @@ public class BRequestTest {
     public void testTableAndCondition() throws SQLException {
         final BRequest request = new BRequest("select * from %table% where %condition% order by id")
                 .table("users")
-                .where(BFilter.equal("active", false).and(BFilter.isNotNull("age")))
-                .build();
+                .where(BFilter.equal("active", false).and(BFilter.isNotNull("age")));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
-            final ResultSet result = request.execute(conn);
-            int count = 0;
-            while(result.next()) {
-                count++;
-                Assert.assertEquals("porco rosso", result.getString("name"));
+            try (PreparedStatement statement = request.make(conn)) {
+                try (ResultSet result = statement.executeQuery()) {
+                    int count = 0;
+                    while(result.next()) {
+                        count++;
+                        Assert.assertEquals("porco rosso", result.getString("name"));
+                    }
+                    Assert.assertEquals(1, count);
+                }
             }
-            Assert.assertEquals(1, count);
         }
     }
 
     @Test
     public void testCondition() throws SQLException {
         final BRequest request = new BRequest("select * from users where %condition% order by id")
-                .where(BFilter.equal("active", false).and(BFilter.isNotNull("age")))
-                .build();
+                .where(BFilter.equal("active", false).and(BFilter.isNotNull("age")));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
-            final ResultSet result = request.execute(conn);
-            int count = 0;
-            while(result.next()) {
-                count++;
-                Assert.assertEquals("porco rosso", result.getString("name"));
+            try (PreparedStatement statement = request.make(conn)) {
+                try (ResultSet result = statement.executeQuery()) {
+                    int count = 0;
+                    while(result.next()) {
+                        count++;
+                        Assert.assertEquals("porco rosso", result.getString("name"));
+                    }
+                    Assert.assertEquals(1, count);
+                }
             }
-            Assert.assertEquals(1, count);
-        }
-    }
-
-    @Test
-    public void testTableAndThenCondition() throws SQLException {
-        final BRequest request = new BRequest("select * from %table% where %condition% order by id")
-                .table("users")
-                .build();
-        try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
-            final ResultSet result = request.where(BFilter.equal("active", false).and(BFilter.isNotNull("age"))).build().execute(conn);
-            int count = 0;
-            while(result.next()) {
-                count++;
-                Assert.assertEquals("porco rosso", result.getString("name"));
-            }
-            Assert.assertEquals(1, count);
         }
     }
 
     @Test
     public void testWithoutTableAndCondition() throws SQLException {
-        final BRequest request = new BRequest("select * from users order by id").build();
+        final BRequest request = new BRequest("select * from users order by id");
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
-            final ResultSet result = request.execute(conn);
-            int count = 0;
-            while(result.next()) {
-                count++;
+            try (PreparedStatement statement = request.make(conn)) {
+                try (ResultSet result = statement.executeQuery()) {
+                    int count = 0;
+                    while(result.next()) {
+                        count++;
+                    }
+                    Assert.assertEquals(4, count);
+                }
             }
-            Assert.assertEquals(4, count);
         }
     }
-
 
 }

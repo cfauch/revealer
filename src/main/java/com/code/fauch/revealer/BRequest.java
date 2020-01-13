@@ -16,7 +16,6 @@ package com.code.fauch.revealer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 
@@ -90,13 +89,15 @@ public class BRequest {
         this.filter = filter;
         return this;
     }
-
+    
     /**
-     * Build a new request by replacing table and condition if needed.
+     * Make the pre-compiled SQL statement from the given connection.
      * 
-     * @return the new request
+     * @param conn the open database connection (not null)
+     * @return The pre-compiled SQL statement
+     * @throws SQLException
      */
-    public BRequest build() {
+    public PreparedStatement make(final Connection conn) throws SQLException {
         String sql = this.tpl;
         if (this.table != null) {
             sql = sql.replace(TABLE_STR, this.table);
@@ -104,22 +105,11 @@ public class BRequest {
         if (this.filter != null) {
             sql = sql.replace(WHERE_STR, this.filter.sql());
         }
-        return new BRequest(sql, this.filter);
-    }
-    
-    /**
-     * Execute this request through the given connection.
-     * 
-     * @param conn the open database connection (not null)
-     * @return the result set
-     * @throws SQLException
-     */
-    public ResultSet execute(final Connection conn) throws SQLException {
-        final PreparedStatement prep = conn.prepareStatement(this.tpl);
+        final PreparedStatement statement = conn.prepareStatement(sql);
         if (this.filter != null) {
-            this.filter.prepareStatement(conn, prep);
+            this.filter.prepareStatement(conn, statement);
         }
-        return prep.executeQuery();
+        return statement;
     }
     
 }
