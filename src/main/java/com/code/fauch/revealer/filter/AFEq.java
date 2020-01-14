@@ -19,6 +19,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Objects;
 
+import com.code.fauch.revealer.EType;
+
 /**
  * Abstract base class for equal/not equal filter command.
  * 

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.code.fauch.revealer.filter;
+package com.code.fauch.revealer;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
@@ -27,7 +27,7 @@ import java.util.UUID;
  * @author c.fauch
  *
  */
-enum EType {
+public enum EType {
     STRING(String.class) {
 
         @Override
@@ -153,7 +153,7 @@ enum EType {
      * @param cls the JAVA class (not null)
      * @return the corresponding type
      */
-    static EType from(final Class<?> cls) {
+    public static EType from(final Class<?> cls) {
         if (cls.isEnum()) {
             return EType.ENUM;
         }
@@ -173,6 +173,6 @@ enum EType {
      * @param value the value to map
      * @throws SQLException
      */
-    abstract void fill(PreparedStatement prep, int index, Object value) throws SQLException;
+    public abstract void fill(PreparedStatement prep, int index, Object value) throws SQLException;
     
 }

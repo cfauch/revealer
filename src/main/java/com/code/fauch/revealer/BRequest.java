@@ -18,6 +18,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 import com.code.fauch.revealer.filter.BFilter;
 
@@ -33,11 +34,20 @@ public class BRequest {
     
     private static final String WHERE_STR = "%condition%";
     
+    private static final String FIELDS_STR = "%fields%";
+    
+    private static final String VALUES_STR = "%values%";
+    
     /**
      * SQL template.
      */
     private final String tpl;
     
+    /**
+     * Ordered list of fields to insert.
+     */
+    private String[] fields;
+
     /**
      * Optional table.
      */
@@ -91,6 +101,17 @@ public class BRequest {
     }
     
     /**
+     * Specify ordered list of field for insertion.
+     * 
+     * @param fields ordered list of fields
+     * @return this builder
+     */
+    public BRequest fields(final String... fields) {
+        this.fields = fields;
+        return this;
+    }
+    
+    /**
      * Make the pre-compiled SQL statement from the given connection.
      * 
      * @param conn the open database connection (not null)
@@ -104,6 +125,15 @@ public class BRequest {
         }
         if (this.filter != null) {
             sql = sql.replace(WHERE_STR, this.filter.sql());
+        }
+        if (this.fields != null) {
+            final StringJoiner fjoiner = new StringJoiner(",", "(", ")");
+            final StringJoiner vjoiner = new StringJoiner(",", "(", ")");
+            for (String field : this.fields) {
+                fjoiner.add(field);
+                vjoiner.add("?");
+            }
+            sql = sql.replace(FIELDS_STR, fjoiner.toString()).replace(VALUES_STR, vjoiner.toString());
         }
         final PreparedStatement statement = conn.prepareStatement(sql);
         if (this.filter != null) {

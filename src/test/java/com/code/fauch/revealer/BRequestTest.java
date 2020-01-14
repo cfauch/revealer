@@ -20,6 +20,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.UUID;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -94,4 +96,33 @@ public class BRequestTest {
         }
     }
 
+    @Test
+    public void testInsert() throws SQLException {
+        final BRequest request = new BRequest("INSERT INTO %table% %fields% VALUES %values%")
+                .table("users")
+                .fields("id", "name", "age", "active");
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "");
+            conn.setAutoCommit(false);
+            try (PreparedStatement statement = request.make(conn)) {
+                statement.setObject(1, UUID.fromString("00000000-0000-0000-0000-000000000005"));
+                statement.setString(2, "Hérode");
+                statement.setNull(3, Types.INTEGER);
+                statement.setBoolean(4, true);
+                statement.executeUpdate();
+            }
+            try (PreparedStatement statement = new BRequest("select * from users order by id").make(conn)) {
+                try (ResultSet result = statement.executeQuery()) {
+                    int count = 0;
+                    while(result.next()) {
+                        count++;
+                    }
+                    Assert.assertEquals(5, count);
+                }
+            }
+        } finally {
+            conn.rollback();
+        }
+    }
 }
