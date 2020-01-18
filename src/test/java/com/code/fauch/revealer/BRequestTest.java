@@ -64,7 +64,7 @@ public class BRequestTest {
 
     @Test
     public void testCondition() throws SQLException {
-        final BRequest request = new BRequest("select * from users where %condition% order by id")
+        final BRequest request = new BRequest("select * from users where %condition% order by %field%").field("id")
                 .where(BFilter.equal("active", false).and(BFilter.isNotNull("age")));
         try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
             try (PreparedStatement statement = request.make(conn)) {
@@ -98,14 +98,14 @@ public class BRequestTest {
 
     @Test
     public void testInsert() throws SQLException {
-        final BRequest request = new BRequest("INSERT INTO %table% %fields% VALUES %values%")
-                .table("users")
-                .fields("id", "name", "age", "active");
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "");
             conn.setAutoCommit(false);
-            try (PreparedStatement statement = request.make(conn)) {
+            try (PreparedStatement statement = new BRequest("insert into %table% %columns% values %values%")
+                    .columns("id", "name", "age", "active")
+                    .table("users")
+                    .make(conn)) {
                 statement.setObject(1, UUID.fromString("00000000-0000-0000-0000-000000000005"));
                 statement.setString(2, "Hérode");
                 statement.setNull(3, Types.INTEGER);
@@ -125,4 +125,35 @@ public class BRequestTest {
             conn.rollback();
         }
     }
+    
+    @Test
+    public void testUpdate() throws SQLException {
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "");
+            conn.setAutoCommit(false);
+            try (PreparedStatement statement = new BRequest("update %table% set %fields% where %condition%")
+                    .table("users")
+                    .where(BFilter.isNull("age"))
+                    .set("age")
+                    .make(conn)) {
+                statement.setInt(1, 969);
+                statement.executeUpdate();
+            }
+            try (PreparedStatement statement = new BRequest("select * from users order by id").make(conn)) {
+                try (ResultSet result = statement.executeQuery()) {
+                    int count = 0;
+                    while(result.next()) {
+                        count++;
+                        result.getInt("age");
+                        Assert.assertFalse(result.wasNull());
+                    }
+                    Assert.assertEquals(4, count);
+                }
+            }
+        } finally {
+            conn.rollback();
+        }
+    }
+
 }

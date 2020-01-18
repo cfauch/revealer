@@ -62,27 +62,38 @@ public class AbsDAOTest {
             this.active = active;
             this.age = age;
         }
+
+        @Override
+        public String toString() {
+            return "User [id=" + id + ", name=" + name + ", active=" + active + ", age=" + age + "]";
+        }
         
     }
     
     private final static class UserDAO extends AbsDAO<User> {
         
+        private static final String SELECT_ORDER_BY_ID = "SELECT * FROM %table% order by %field%";
+        
         private static final String TABLE = "users";
         
-        private static final String[] FIELDS = new String[] {"id", "name", "active", "age"};
+        private static final String[] COLULMNS = new String[] {"id", "name", "age", "active"};
         
         private UserDAO(final Connection connection) {
             super(connection);
         }
 
+        public List<User> findOrderBy(final String field) throws SQLException {
+            return getAll(new BRequest(SELECT_ORDER_BY_ID).field(field));
+        }
+        
         @Override
         protected String getTable() {
             return TABLE;
         }
 
         @Override
-        protected String[] getFields() {
-            return FIELDS;
+        protected String[] getColumns() {
+            return COLULMNS;
         }
 
         @Override
@@ -327,4 +338,38 @@ public class AbsDAOTest {
         }
     }
     
+    @Test
+    public void testUpdate() throws SQLException {
+        final User mathusalem = new User(UUID.fromString("00000000-0000-0000-0000-000000000003"), "mathusalem", true, 969);
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "");
+            conn.setAutoCommit(false);
+            new UserDAO(conn).update(BFilter.isNull("age"), mathusalem);
+            try (PreparedStatement statement = new BRequest("select * from users order by id").make(conn)) {
+                try (ResultSet result = statement.executeQuery()) {
+                    int count = 0;
+                    while(result.next()) {
+                        count++;
+                        if (result.getObject("id").equals("00000000-0000-0000-0000-000000000003")) {
+                            Assert.assertEquals("methusalem", result.getString("name"));
+                            Assert.assertTrue(result.getBoolean("active"));
+                            Assert.assertEquals(969, result.getInt("age"));
+                        }
+                    }
+                    Assert.assertEquals(4, count);
+                }
+            }
+        } finally {
+            conn.rollback();
+        }
+    }
+    
+    @Test
+    public void testFindOrderByName() throws SQLException {
+        try(Connection conn = DriverManager.getConnection(String.format("jdbc:h2:%s", url), "totoro", "")) {
+            final List<User> users = new UserDAO(conn).findOrderBy("name");
+            Assert.assertEquals(4, users.size());
+        }
+    }
 }

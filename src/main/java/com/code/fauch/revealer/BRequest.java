@@ -34,9 +34,13 @@ public class BRequest {
     
     private static final String WHERE_STR = "%condition%";
     
-    private static final String FIELDS_STR = "%fields%";
+    private static final String COLUMNS_STR = "%columns%";
     
     private static final String VALUES_STR = "%values%";
+    
+    private static final String FIELD_STR = "%field%";
+    
+    private static final String FIELDS_STR = "%fields%";
     
     /**
      * SQL template.
@@ -44,9 +48,19 @@ public class BRequest {
     private final String tpl;
     
     /**
-     * Ordered list of fields to insert.
+     * Ordered list of columns to insert.
+     */
+    private String[] columns;
+
+    /**
+     * Ordered list of fields to set.
      */
     private String[] fields;
+
+    /**
+     * Optional field.
+     */
+    private String field;
 
     /**
      * Optional table.
@@ -101,13 +115,35 @@ public class BRequest {
     }
     
     /**
-     * Specify ordered list of field for insertion.
+     * Specify ordered list of columns for insertion.
+     * 
+     * @param columns ordered list of columns
+     * @return this builder
+     */
+    public BRequest columns(final String... columns) {
+        this.columns = columns;
+        return this;
+    }
+
+    /**
+     * Specify ordered list of fields to set for update.
      * 
      * @param fields ordered list of fields
      * @return this builder
      */
-    public BRequest fields(final String... fields) {
+    public BRequest set(final String... fields) {
         this.fields = fields;
+        return this;
+    }
+
+    /**
+     * Specify a field.
+     * 
+     * @param field the field
+     * @return this builder
+     */
+    public BRequest field(final String field) {
+        this.field = field;
         return this;
     }
     
@@ -126,14 +162,24 @@ public class BRequest {
         if (this.filter != null) {
             sql = sql.replace(WHERE_STR, this.filter.sql());
         }
-        if (this.fields != null) {
+        if (this.field != null) {
+            sql = sql.replace(FIELD_STR, this.field);
+        }
+        if (this.columns != null) {
             final StringJoiner fjoiner = new StringJoiner(",", "(", ")");
             final StringJoiner vjoiner = new StringJoiner(",", "(", ")");
-            for (String field : this.fields) {
+            for (String field : this.columns) {
                 fjoiner.add(field);
                 vjoiner.add("?");
             }
-            sql = sql.replace(FIELDS_STR, fjoiner.toString()).replace(VALUES_STR, vjoiner.toString());
+            sql = sql.replace(COLUMNS_STR, fjoiner.toString()).replace(VALUES_STR, vjoiner.toString());
+        }
+        if (this.fields != null) {
+            final StringJoiner fjoiner = new StringJoiner("=?,", "", "=?");
+            for (String field : this.fields) {
+                fjoiner.add(field);
+            }
+            sql = sql.replace(FIELDS_STR, fjoiner.toString());
         }
         final PreparedStatement statement = conn.prepareStatement(sql);
         if (this.filter != null) {
