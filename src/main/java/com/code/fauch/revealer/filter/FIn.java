@@ -20,7 +20,7 @@ package com.code.fauch.revealer.filter;
  * @author c.fauch
  *
  */
-public final class FIn<T> extends AFIn<T> {
+final class FIn<T> extends AFIn<T> {
 
     private static final String TPL = "%s=ANY(?)";
     
@@ -31,7 +31,7 @@ public final class FIn<T> extends AFIn<T> {
      * @param arg the column name of the parameter (not null)
      * @param elts the values (not null)
      */
-    public FIn(String sqlType, String arg, T[] elts) {
+    FIn(String sqlType, String arg, T[] elts) {
         super(sqlType, arg, elts);
     }
 

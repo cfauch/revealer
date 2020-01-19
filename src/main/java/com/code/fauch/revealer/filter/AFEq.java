@@ -27,7 +27,7 @@ import com.code.fauch.revealer.EType;
  * @author c.fauch
  *
  */
-public abstract class AFEq<T> implements IFilter {
+abstract class AFEq<T> implements IFilter {
 
     /**
      * The column name.

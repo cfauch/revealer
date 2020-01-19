@@ -15,7 +15,7 @@ If you use Maven just add this dependency:
 
 ## Combine revealer with horcrux
 
-By combining horcrux with developer, you will be able to not only link your java objects to the different tables of your database but also manage the upgrade of your database. Here is a complete example.
+By combining horcrux with revealer, you will be able to not only link your java objects to the different tables of your database but also manage the upgrade of your database. Here is a complete example.
 
 ### Create your business java object
 
@@ -170,9 +170,9 @@ public static void main(String[] args) throws Exception {
 }
 ```
 
-## Use request with revealer
+## Use requests with revealer
 
-You can use `BRequest` to build and execute request.
+You can use `BRequest` to build and execute requests.
 
 ### Select request
 
@@ -207,14 +207,14 @@ try(DataBase db = DataBase.init("pool").withScripts(scripts).versionTable("HORCR
 
 ```
 
-### Insert request
+### The insert request
 
 1. Create a new `BRequest` with a sql statement template: `new BRequest("insert into %table% %columns% values %values%")`
 2. Complete the `Brequest` object with:
 * the `%table%` to update: `.table("HORCRUX_VERSIONS")`
 * the `%colulns%`: `.columns("number", "script", "active")`
 * the `%values%` is automatically completed via the columns given earlier.
-3. Call `make()` with the connection to build the associated `PreparedStatement` and fill it before execution.
+3. Call `make()` with the connection to build the associated `PreparedStatement` and fill it before to execute it.
 
 ```
 try(DataBase db = DataBase.init("pool").withScripts(scripts).versionTable("HORCRUX_VERSIONS").build(prop)) {
@@ -233,14 +233,14 @@ try(DataBase db = DataBase.init("pool").withScripts(scripts).versionTable("HORCR
 }
  ```
 
-### Update request
+### The update request
 
 1. Create a new `BRequest` with a sql statement template: `new BRequest("update %table% set %fields% where %condition%")`
 2. Complete the `Brequest` object with:
 * the `%table%`to update: `.table("HORCRUX_VERSIONS")`
 * the `%fields%`to set: `fields("script", "active")`
 * the `%condition%`: `.where(BFilter.isNotNull("script"))`
-3. Call `make()` with the connection to build the associated `PreparedStatement` and fill it before execution.
+3. Call `make()` with the connection to build the associated `PreparedStatement` and fill it before to execute it.
 
 ```
 try(DataBase db = DataBase.init("pool").withScripts(scripts).versionTable("HORCRUX_VERSIONS").build(prop)) {
@@ -259,27 +259,27 @@ try(DataBase db = DataBase.init("pool").withScripts(scripts).versionTable("HORCR
 }
 ```
 
-## Customize your DAO using request
+## Customize your DAO using requests
 
-The abstract class `AbsDAO` provides methods that takes `BRequest` to customize your DAO:
+The abstract class `AbsDAO` provides methods that takes `BRequest` in argument to customize your DAO:
 
 * `put(final T object, final BRequest req)` to insert or update one object in database
 * `putAll(final Collection<T> objects, final BRequest req)`: to insert several objects
 * `void remove(final BRequest req)`: to remove objects
-* `T get(final BRequest req)`: to retreive one object from database
-* `List<T> getAll(final BRequest req)`: to retreive a list of objects
+* `T get(final BRequest req)`: to retrieve one object from database
+* `List<T> getAll(final BRequest req)`: to retrieve a list of objects
 
 Here is how to retrieve the list all versions from database ordered by a given field.
 
 ### Update your DAO definition
 
-1. Update your `VersionDAO` by adding the following sql request :
+1. Update your `VersionDAO` by adding the following sql request template:
 
 ```
 private static final String SELECT_ORDER_BY_ID = "SELECT * FROM %table% order by %field%";
 
 ```
-2. Create a new method `findOrderBy` to returns all versions of the database ordered by a given field:
+2. Create a new method `findOrderBy` to return all versions of the database ordered by a given field:
 
 ```
     public List<User> findOrderBy(final String field) throws SQLException {
@@ -289,7 +289,7 @@ private static final String SELECT_ORDER_BY_ID = "SELECT * FROM %table% order by
 
 ### Use it
 
-Next open a new session and call `findOrderBy` with `"script"` to obtain the list of all versions of the database ordered by the script name.
+Next open a new session and call `findOrderBy` with `"script"` to obtain the list of all versions of the database ordered by the script.
 
 ```
     try(Connection conn = db.openSession()) {

@@ -25,7 +25,7 @@ import java.util.Objects;
  * @author c.fauch
  *
  */
-public abstract class AFIn<T> implements IFilter {
+abstract class AFIn<T> implements IFilter {
 
     /**
      * In values.

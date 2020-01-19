@@ -20,7 +20,7 @@ package com.code.fauch.revealer.filter;
  * @author c.fauch
  *
  */
-public final class FOr extends AFOp {
+final class FOr extends AFOp {
 
     private static final String OPERATOR = "OR";
     
@@ -30,7 +30,7 @@ public final class FOr extends AFOp {
      * @param filter1 left filter (not null)
      * @param filter2 right filter (not null)
      */
-    public FOr(final IFilter filter1, final IFilter filter2) {
+    FOr(final IFilter filter1, final IFilter filter2) {
         super(filter1, filter2);
     }
 

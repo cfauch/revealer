@@ -25,7 +25,7 @@ import java.util.Objects;
  * @author c.fauch
  *
  */
-public final class FNot implements IFilter {
+final class FNot implements IFilter {
 
     private static final String TPL = "NOT(%s)";
     
@@ -39,7 +39,7 @@ public final class FNot implements IFilter {
      * 
      * @param filter the filter to negate (not null)
      */
-    public FNot(final IFilter filter) {
+    FNot(final IFilter filter) {
         this.filter = Objects.requireNonNull(filter, "filter is missing");
     }
     

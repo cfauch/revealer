@@ -20,7 +20,7 @@ package com.code.fauch.revealer.filter;
  * @author c.fauch
  *
  */
-public final class FAnd extends AFOp {
+final class FAnd extends AFOp {
 
     private static final String OPERATOR = "AND";
     
@@ -30,7 +30,7 @@ public final class FAnd extends AFOp {
      * @param filter1 left query (not null)
      * @param filter2 right query (not null)
      */
-    public FAnd(final IFilter filter1, final IFilter filter2) {
+    FAnd(final IFilter filter1, final IFilter filter2) {
         super(filter1, filter2);
     }
 

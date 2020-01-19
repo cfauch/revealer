@@ -20,7 +20,7 @@ package com.code.fauch.revealer.filter;
  * @author c.fauch
  *
  */
-public final class FEq<T> extends AFEq<T> {
+final class FEq<T> extends AFEq<T> {
 
     private static final String TPL = "%s=?";
     
@@ -33,7 +33,7 @@ public final class FEq<T> extends AFEq<T> {
      * @param arg the column name of the parameter (not null)
      * @param value the parameter value
      */
-    public FEq(Class<? extends T> cls, String arg, T value) {
+    FEq(Class<? extends T> cls, String arg, T value) {
         super(cls, arg, value);
     }
     

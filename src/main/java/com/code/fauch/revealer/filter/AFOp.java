@@ -25,7 +25,7 @@ import java.util.Objects;
  * @author c.fauch
  *
  */
-public abstract class AFOp implements IFilter {
+abstract class AFOp implements IFilter {
 
     private static final String TPL = "(%s) %s (%s)";
     

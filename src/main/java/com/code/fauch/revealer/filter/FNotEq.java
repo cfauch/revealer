@@ -20,7 +20,7 @@ package com.code.fauch.revealer.filter;
  * @author c.fauch
  *
  */
-public final class FNotEq<T> extends AFEq<T> {
+final class FNotEq<T> extends AFEq<T> {
 
     private static final String TPL = "%s!=?";
     
@@ -33,7 +33,7 @@ public final class FNotEq<T> extends AFEq<T> {
      * @param arg the column name of the parameter (not null)
      * @param value the parameter value
      */
-    public FNotEq(Class<? extends T> cls, String arg, T value) {
+    FNotEq(Class<? extends T> cls, String arg, T value) {
         super(cls, arg, value);
     }
 
