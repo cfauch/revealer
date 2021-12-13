@@ -9,134 +9,87 @@ If you use Maven just add this dependency:
     <dependency>
       <groupId>com.fauch.code</groupId>
       <artifactId>revealer</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.1</version>
     </dependency>
 ```
 
-## Combine revealer with horcrux
-
-By combining horcrux with revealer, you will be able to not only link your java objects to the different tables of your database but also manage the upgrade of your database. Here is a complete example.
+## Getting start
 
 ### Create your business java object
 
-Define a ` Version` object like this:
+Define a ` User` object like this:
 
 ```
-public final class Version {
+@Collection(name="horcrux_users")
+public class User {
 
-    private final String script;
-        
-    private final boolean active;
-    
-    private final int number;
-    
-    public Version(final int number, final String script, final boolean active) {
-        this.number = number;
-        this.active = active;
-        this.script = script;
+    @Id
+    @Field(name = "id")
+    private Long id;
+
+    @Field(name = "name")
+    private String name;
+
+    @Field(name = "profile")
+    private String profile;
+
+    public User(final Long id, final String name, final String profile) {
+        this.id = id;
+        this.name = name;
+        this.profile = profile;
     }
 
-    
-    /**
-     * @return the script
-     */
-    public String getScript() {
-        return script;
+    public User(final Long id) {
+        this(id, null, null);
     }
 
-
-    /**
-     * @return the active
-     */
-    public boolean isActive() {
-        return active;
+    public User() {
+        this(null, null, null);
     }
 
-
-    /**
-     * @return the number
-     */
-    public int getNumber() {
-        return number;
+    public Long getId() {
+        return id;
     }
 
-
-    @Override
-    public String toString() {
-        return "Versions [script=" + script + ", active=" + active + ", number=" + number + "]";
+    public String getName() {
+        return name;
     }
-    
-}
+
+    public String getProfile() {
+        return profile;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setProfile(String profile) {
+        this.profile = profile;
+    }
+
 ```
-
-### Next, create the corresponding DAO
-
-Define a `VersionDAO` class that inherits of `AbsDAO` like this:
-
-```
-public class VersionDAO extends AbsDAO<Version> {
-
-    private static final String TABLE = "HORCRUX_VERSIONS";
-    
-    private static final String[] COLUMNS = new String[] {"number", "script", "active"};
-    
-    /**
-     * @param connection
-     */
-    protected VersionDAO(Connection connection) {
-        super(connection);
-    }
-
-    @Override
-    protected String getTable() {
-        return TABLE;
-    }
-
-    @Override
-    protected String[] getColumns() {
-        return COLUMNS;
-    }
-
-    @Override
-    protected Version newObject(final ResultSet result) throws SQLException {
-        return new Version(
-                result.getInt("number"), 
-                result.getString("script"), 
-                result.getBoolean("active")
-        );
-    }
-
-    @Override
-    protected void prepareFromObject(final PreparedStatement prep, final Version version) 
-            throws SQLException {
-        prep.setInt(1, version.getNumber());
-        prep.setString(2, version.getScript());
-        prep.setBoolean(3, version.isActive());
-    }
-
-}
-```
-
-Notice that you have to define the following methods:
-
-* `getTable`: Should returns the name of the table of the database where are stored each objects.
-* `getColumns`: Is used to insert records in the database. It should returns the ordered list of columns of the table.
-* `prepareFromObject`: Should complete the given `PreparedStatement` with the fields of the java object to store. The indexes used should correspond with the ones of the columns returns by the `getColumns` method.
-* `newObject`: Should creates the java object from the given `ResultSet`.
+Notice the use of the following annotations:
+* `@Collection`: to specify the name of the corresponding sql table.
+* `@Field`: to specify the name of the corresponding sql table column.
+* `@Id`: to indicate the unique identifier.
 
 ### Now, use it
 
-Use `horcrux` to create a connection pool and manages database upgrading.
-
 ```
-    final Properties prop = new Properties();
-    prop.setProperty("jdbcUrl", "jdbc:h2:/tmp/hx");
-    prop.setProperty("username", "harry");
-    prop.setProperty("password", "");
-    final Path scripts = Paths.get(Main.class.getResource("/db").toURI());
-    try(DataBase db = DataBase.init("pool").withScripts(scripts).versionTable("HORCRUX_VERSIONS").build(prop)) {
-        db.open(ECreateOption.SCHEMA, ECreateOption.UPGRADE);
-        [...]
+    private static final BeanRWFactory<User> FACTORY = BeanRWFactory.from(User.class);
+
+    public static void main(String[] args) throws DaoException, SQLException {
+        final PGSimpleDataSource source = new PGSimpleDataSource();
+        source.setUrl("jdbc:postgresql:hx");
+        source.setUser("covid19");
+        source.setPassword("Qvdm!");
+        try(Connection conn = source.getConnection()) {
+            new SmallJdbcDao<>(FACTORY, conn).insert(new User(null, "porco rosso", "guest"));
+        }
     }
 ```
 
@@ -295,46 +248,6 @@ Next open a new session and call `findOrderBy` with `"script"` to obtain the lis
     try(Connection conn = db.openSession()) {
         for (Version version : new VersionDAO(conn).findOrderBy("script"))) {
             System.out.println(version);
-        }
-    }
-```
-
-## Revealer without horcrux
-
-Naturally, it's also possible to use revealer without horcrux.
-
-* With DAO:
-
-```
-    public static void main(String[] args) throws Exception {
-        try(Connection conn = DriverManager.getConnection("jdbc:h2:/tmp/hx", "totoro", "")) {
-            for (Version version : new VersionDAO(conn).findAll(BFilter.isNotNull("script"))) {
-                System.out.println(version);
-            }
-        }
-    }
-```
-
-* With request:
-
-```
-    public static void main(String[] args) throws Exception {
-        try(Connection conn = DriverManager.getConnection("jdbc:h2:/tmp/hx", "totoro", "")) {
-            try (PreparedStatement statement = new BRequest("select * from %table% where %condition% order by %field%")
-                    .table("HORCRUX_VERSIONS")
-                    .where(BFilter.isNotNull("script"))
-                    .field("number")
-                    .make(conn)) {
-                try (ResultSet result = statement.executeQuery()) {
-                    while(result.next()) {
-                        System.out.println(
-                                ">> version: " + result.getInt("number") 
-                                + " >> script: " + result.getString("script")
-                                + " >> active: " + result.getBoolean("active")
-                        );
-                    }
-                }
-            }
         }
     }
 ```
