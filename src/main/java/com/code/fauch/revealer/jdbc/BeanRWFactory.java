@@ -18,6 +18,7 @@ import com.code.fauch.revealer.BeanMapping;
 
 import java.sql.PreparedStatement;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -31,7 +32,7 @@ public final class BeanRWFactory<T> {
     private static final String DELETE_SQL = "delete from %s where %s=?";
     private static final String UPDATE_SQL = "update %s set %s where %s=?";
     private static final String FOUND_SQL = "select * from %s where %s=?";
-    private static final String FOUND_ALL_SQL = "select * from %s where %s>=? order by %s limit ?";
+    private static final String FOUND_ALL_SQL = "select * from %s where %s>? order by %s limit ?";
 
     /**
      * The bean mapping (not null).
@@ -71,7 +72,7 @@ public final class BeanRWFactory<T> {
      * @return the just created factory
      */
     public static <U> BeanRWFactory<U> from(final Class<U> cls) {
-        return new BeanRWFactory<>(BeanMapping.from(cls));
+        return new BeanRWFactory<>(BeanMapping.from(Objects.requireNonNull(cls, "cls is mandatory")));
     }
 
     /**

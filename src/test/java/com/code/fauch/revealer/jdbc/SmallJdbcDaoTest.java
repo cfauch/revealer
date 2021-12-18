@@ -14,7 +14,8 @@
  */
 package com.code.fauch.revealer.jdbc;
 
-import com.code.fauch.revealer.DaoException;
+import com.code.fauch.revealer.PersistenceException;
+import com.code.fauch.revealer.Tools;
 import com.code.fauch.revealer.User;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.AfterEach;
@@ -24,8 +25,6 @@ import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +50,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testInsert() throws SQLException, DaoException {
+    public void testInsert() throws SQLException, PersistenceException {
         final User user = new User(null, "totoro", "guest");
         try(Connection conn = ds.getConnection()) {
             Assertions.assertEquals(1, new SmallJdbcDao<>(FACTORY, conn).insert(user));
@@ -59,7 +58,7 @@ public class SmallJdbcDaoTest {
         Assertions.assertNotNull(user.getId());
         Assertions.assertEquals("totoro", user.getName());
         Assertions.assertEquals("guest", user.getProfile());
-        checkUserExists(user, 1);
+        Tools.checkUserExists(ds, user, 1);
     }
 
     @Test
@@ -70,7 +69,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testInsertWhenIdNotNull() throws SQLException, DaoException {
+    public void testInsertWhenIdNotNull() throws SQLException, PersistenceException {
         final User user = new User(4L, "totoro", "guest");
         try(Connection conn = ds.getConnection()) {
             Assertions.assertEquals(1, new SmallJdbcDao<>(FACTORY, conn).insert(user));
@@ -79,15 +78,15 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testGetAll() throws SQLException, DaoException {
+    public void testGetAll() throws SQLException, PersistenceException {
         int size = 1;
         try(Connection conn = ds.getConnection()) {
-            for (int i = 1;;i+=size) {
+            for (int i = 0;;i+=size) {
                 List<User> founds = new SmallJdbcDao<>(FACTORY, conn).getAll(i, size);
                 if (founds.isEmpty()) {
-                    Assertions.assertEquals(5, i);
+                    Assertions.assertEquals(4, i);
                 } else {
-                    Assertions.assertEquals(i, founds.get(0).getId());
+                    Assertions.assertEquals(i + 1, founds.get(0).getId());
                 }
                 if (founds.size() != size) {
                     break;
@@ -97,7 +96,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testGetAll0Size() throws SQLException, DaoException {
+    public void testGetAll0Size() throws SQLException, PersistenceException {
         try(Connection conn = ds.getConnection()) {
             List<User> founds = new SmallJdbcDao<>(FACTORY, conn).getAll(0, 0);
             Assertions.assertTrue(founds.isEmpty());
@@ -105,7 +104,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testGetAllNegSizeAllRecords() throws SQLException, DaoException {
+    public void testGetAllNegSizeAllRecords() throws SQLException, PersistenceException {
         try(Connection conn = ds.getConnection()) {
             List<User> founds = new SmallJdbcDao<>(FACTORY, conn).getAll(0, -2);
             Assertions.assertEquals(4, founds.size());
@@ -113,7 +112,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testGetAllNegStartAllRecords() throws SQLException, DaoException {
+    public void testGetAllNegStartAllRecords() throws SQLException, PersistenceException {
         try(Connection conn = ds.getConnection()) {
             List<User> founds = new SmallJdbcDao<>(FACTORY, conn).getAll(-10, -2);
             Assertions.assertEquals(4, founds.size());
@@ -128,7 +127,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void find() throws SQLException, DaoException {
+    public void find() throws SQLException, PersistenceException {
         User user;
         try(Connection conn = ds.getConnection()) {
             user = new SmallJdbcDao<>(FACTORY, conn).find(
@@ -142,7 +141,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void findAllWithoutArgs() throws SQLException, DaoException {
+    public void findAllWithoutArgs() throws SQLException, PersistenceException {
         try(Connection conn = ds.getConnection()) {
             List<User> founds = new SmallJdbcDao<>(FACTORY, conn).findAll(
                     "select * from horcrux_users where mail is not null");
@@ -151,7 +150,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void findAllPagination() throws SQLException, DaoException {
+    public void findAllPagination() throws SQLException, PersistenceException {
         List<User> users = new ArrayList<>();
         int size = 2;
         try(Connection conn = ds.getConnection()) {
@@ -169,43 +168,43 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testUpdate() throws SQLException, DaoException {
+    public void testUpdate() throws SQLException, PersistenceException {
         User user = new User(3L, "sheldon", "administrator");
         try(Connection conn = ds.getConnection()) {
             Assertions.assertEquals(1, new SmallJdbcDao<>(FACTORY, conn).update(user));
         }
         Assertions.assertEquals(3L, user.getId());
-        checkUserExists(user, 1);
+        Tools.checkUserExists(ds, user, 1);
     }
 
     @Test
-    public void testUpdateNullId() throws SQLException, DaoException {
+    public void testUpdateNullId() throws SQLException, PersistenceException {
         User user = new User(null, "leonard", "administrator");
         try(Connection conn = ds.getConnection()) {
             Assertions.assertEquals(0, new SmallJdbcDao<>(FACTORY, conn).update(user));
         }
         Assertions.assertNull(user.getId());
-        checkUserExists(user, 0);
+        Tools.checkUserExists(ds, user, 0);
     }
 
     @Test
-    public void testUpdateNegId() throws SQLException, DaoException {
+    public void testUpdateNegId() throws SQLException, PersistenceException {
         User user = new User(-2L, "sheldon", "administrator");
         try(Connection conn = ds.getConnection()) {
             Assertions.assertEquals(0, new SmallJdbcDao<>(FACTORY, conn).update(user));
         }
         Assertions.assertEquals(-2L, user.getId());
-        checkUserExists(user, 0);
+        Tools.checkUserExists(ds, user, 0);
     }
 
     @Test
-    public void testUpdateNotFound() throws SQLException, DaoException {
+    public void testUpdateNotFound() throws SQLException, PersistenceException {
         User user = new User(10L, "sheldon", "administrator");
         try(Connection conn = ds.getConnection()) {
             Assertions.assertEquals(0, new SmallJdbcDao<>(FACTORY, conn).update(user));
         }
         Assertions.assertEquals(10L, user.getId());
-        checkUserExists(user, 0);
+        Tools.checkUserExists(ds, user, 0);
     }
 
     @Test
@@ -216,7 +215,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testGet() throws SQLException, DaoException {
+    public void testGet() throws SQLException, PersistenceException {
         User user;
         try(Connection conn = ds.getConnection()) {
             user = new SmallJdbcDao<>(FACTORY, conn).get(2L);
@@ -228,7 +227,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testGetNullId() throws SQLException, DaoException {
+    public void testGetNullId() throws SQLException, PersistenceException {
         User user;
         try(Connection conn = ds.getConnection()) {
             user = new SmallJdbcDao<>(FACTORY, conn).get(null);
@@ -237,7 +236,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testGetNullNegId() throws SQLException, DaoException {
+    public void testGetNullNegId() throws SQLException, PersistenceException {
         User user;
         try(Connection conn = ds.getConnection()) {
             user = new SmallJdbcDao<>(FACTORY, conn).get(-1);
@@ -246,17 +245,17 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testDelete() throws SQLException, DaoException {
+    public void testDelete() throws SQLException, PersistenceException {
         User user = new User(4L, "silvester", "guest");
         try(Connection conn = ds.getConnection()) {
             Assertions.assertEquals(1, new SmallJdbcDao<>(FACTORY, conn).delete(user));
         }
         Assertions.assertNull(user.getId());
-        checkUserExists(user, 0);
+        Tools.checkUserExists(ds, user, 0);
     }
 
     @Test
-    public void testDeleteNullId() throws SQLException, DaoException {
+    public void testDeleteNullId() throws SQLException, PersistenceException {
         User user = new User(null, "silvester", "guest");
         try(Connection conn = ds.getConnection()) {
             Assertions.assertEquals(0, new SmallJdbcDao<>(FACTORY, conn).delete(user));
@@ -265,7 +264,7 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testDeleteNegId() throws SQLException, DaoException {
+    public void testDeleteNegId() throws SQLException, PersistenceException {
         User user = new User(-1L, "silvester", "guest");
         try(Connection conn = ds.getConnection()) {
             Assertions.assertEquals(0, new SmallJdbcDao<>(FACTORY, conn).delete(user));
@@ -277,21 +276,6 @@ public class SmallJdbcDaoTest {
     public void testDeleteNull() throws SQLException {
         try(Connection conn = ds.getConnection()) {
             Assertions.assertThrows(NullPointerException.class, ()->new SmallJdbcDao<>(FACTORY, conn).delete(null));
-        }
-    }
-
-    private void checkUserExists(final User user, long count) throws SQLException {
-        try(Connection conn = ds.getConnection()) {
-            try(PreparedStatement stmt =
-                        conn.prepareStatement("select count(*) from horcrux_users where id=? and name=? and profile=?")) {
-                stmt.setObject(1, user.getId());
-                stmt.setObject(2, user.getName());
-                stmt.setObject(3, user.getProfile());
-                try(ResultSet result = stmt.executeQuery()) {
-                    Assertions.assertTrue(result.next());
-                    Assertions.assertEquals(count, result.getLong(1));
-                }
-            }
         }
     }
 

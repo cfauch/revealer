@@ -14,7 +14,8 @@
  */
 package com.code.fauch.revealer.jdbc;
 
-import com.code.fauch.revealer.DaoException;
+import com.code.fauch.revealer.IDao;
+import com.code.fauch.revealer.PersistenceException;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ import java.util.Objects;
  *
  * @param <T> the type of the bean
  */
-public class SmallJdbcDao<T> {
+public class SmallJdbcDao<T> implements IDao<T> {
 
     /**
      * The jdbc connection (not null)
@@ -52,9 +53,10 @@ public class SmallJdbcDao<T> {
      * Insert a bean.
      * @param bean the bean to insert (not null)
      * @return newly created bean number
-     * @throws DaoException if SQL or bean access problem.
+     * @throws PersistenceException if SQL or bean access problem.
      */
-    public final int insert(final T bean) throws DaoException {
+    @Override
+    public final int insert(final T bean) throws PersistenceException {
         try(PreparedStatement stmt = this.connection.prepareStatement(this.rwFactory.getInsertQuery(), Statement.RETURN_GENERATED_KEYS)) {
             this.rwFactory.getWriter(stmt).write(Objects.requireNonNull(bean, "bean is mandatory"));
             final int nb = stmt.executeUpdate();
@@ -65,7 +67,7 @@ public class SmallJdbcDao<T> {
             }
             return nb;
         } catch (SQLException | ReflectiveOperationException err) {
-            throw new DaoException(err);
+            throw new PersistenceException(err);
         }
     }
 
@@ -73,14 +75,15 @@ public class SmallJdbcDao<T> {
      * Update record using the given bean.
      * @param bean the bean to update (not null)
      * @return the updated record number
-     * @throws DaoException if SQL or bean access problem
+     * @throws PersistenceException if SQL or bean access problem
      */
-    public final int update(final T bean) throws DaoException {
+    @Override
+    public final int update(final T bean) throws PersistenceException {
         try (PreparedStatement stmt = this.connection.prepareStatement(this.rwFactory.getUpdateQuery())) {
             this.rwFactory.getWriter(stmt).writeWithId(Objects.requireNonNull(bean, "bean is mandatory"));
             return stmt.executeUpdate();
         } catch (SQLException | ReflectiveOperationException err) {
-            throw new DaoException(err);
+            throw new PersistenceException(err);
         }
     }
 
@@ -88,9 +91,10 @@ public class SmallJdbcDao<T> {
      * Delete the record corresponding to the given bean.
      * @param bean the bean to delete (not null)
      * @return the deleted record number
-     * @throws DaoException if SQL or bean access problem
+     * @throws PersistenceException if SQL or bean access problem
      */
-    public final int delete(final T bean) throws DaoException {
+    @Override
+    public final int delete(final T bean) throws PersistenceException {
         try (PreparedStatement stmt = this.connection.prepareStatement(rwFactory.getDeleteQuery())) {
             this.rwFactory.getWriter(stmt).writeId(Objects.requireNonNull(bean, "bean is mandatory"));
             int nb =  stmt.executeUpdate();
@@ -99,7 +103,7 @@ public class SmallJdbcDao<T> {
             }
             return nb;
         } catch (SQLException | ReflectiveOperationException err) {
-            throw new DaoException(err);
+            throw new PersistenceException(err);
         }
     }
 
@@ -107,9 +111,10 @@ public class SmallJdbcDao<T> {
      * Searches and returns the bean of the given id.
      * @param id the id of the bean to research
      * @return the corresponding bean or null if not found
-     * @throws DaoException if SQL or bean access problem
+     * @throws PersistenceException if SQL or bean access problem
      */
-    public final T get(final Object id) throws DaoException {
+    @Override
+    public final T get(final Object id) throws PersistenceException {
         try (PreparedStatement stmt = this.connection.prepareStatement(this.rwFactory.getFoundQuery())) {
             stmt.setObject(1, id);
             try (ResultSet result = stmt.executeQuery()) {
@@ -119,7 +124,7 @@ public class SmallJdbcDao<T> {
                 return null;
             }
         } catch (SQLException | ReflectiveOperationException err) {
-            throw new DaoException(err);
+            throw new PersistenceException(err);
         }
     }
 
@@ -128,9 +133,10 @@ public class SmallJdbcDao<T> {
      * @param query the SQL query (not null)
      * @param args the optional query arguments
      * @return the corresponding bean or null if not found
-     * @throws DaoException if SQL or bean access problem
+     * @throws PersistenceException if SQL or bean access problem
      */
-    public final T find(final String query, final Object... args) throws DaoException {
+    @Override
+    public final T find(final String query, final Object... args) throws PersistenceException {
         try (PreparedStatement stmt = this.connection.prepareStatement(Objects.requireNonNull(query, "query is mandatory"))) {
             for (int i = 0 ; i < args.length; i++) {
                 stmt.setObject(i+1, args[i]);
@@ -142,18 +148,19 @@ public class SmallJdbcDao<T> {
                 return null;
             }
         } catch (SQLException | ReflectiveOperationException err) {
-            throw new DaoException(err);
+            throw new PersistenceException(err);
         }
     }
 
     /**
-     * Search and returns beans with pagination.
-     * @param start the start id
+     * Search and returns beans with pagination ordered by id.
+     * @param start the start id (excluded)
      * @param size the page size
      * @return the corresponding beans (it may be empty)
-     * @throws DaoException if SQL or bean access problem
+     * @throws PersistenceException if SQL or bean access problem
      */
-    public final List<T> getAll(int start, int size) throws DaoException {
+    @Override
+    public final List<T> getAll(Object start, int size) throws PersistenceException {
         ArrayList<T> founds = new ArrayList<>();
         try (PreparedStatement stmt = this.connection.prepareStatement(this.rwFactory.getFoundAllQuery())) {
             stmt.setObject(1, start);
@@ -164,7 +171,7 @@ public class SmallJdbcDao<T> {
                 }
             }
         } catch (SQLException | ReflectiveOperationException err) {
-            throw new DaoException(err);
+            throw new PersistenceException(err);
         }
         return founds;
     }
@@ -174,9 +181,10 @@ public class SmallJdbcDao<T> {
      * @param query the SQL query (not null)
      * @param args the optional query arguments
      * @return the corresponding beans (it may be empty)
-     * @throws DaoException if SQL or bean access problem
+     * @throws PersistenceException if SQL or bean access problem
      */
-    public final List<T> findAll(final String query, final Object... args) throws DaoException {
+    @Override
+    public final List<T> findAll(final String query, final Object... args) throws PersistenceException {
         ArrayList<T> founds = new ArrayList<>();
         try (PreparedStatement stmt = this.connection.prepareStatement(Objects.requireNonNull(query, "query is mandatory"))) {
             for (int i = 0 ; i < args.length; i++) {
@@ -188,7 +196,7 @@ public class SmallJdbcDao<T> {
                 }
             }
         } catch (SQLException | ReflectiveOperationException err) {
-            throw new DaoException(err);
+            throw new PersistenceException(err);
         }
         return founds;
     }

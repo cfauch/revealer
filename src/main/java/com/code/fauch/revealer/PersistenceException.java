@@ -14,14 +14,17 @@
  */
 package com.code.fauch.revealer;
 
-/**
- * Exception for all DAO method call exceptions.
- */
-public class DaoException extends Exception {
+import java.io.Serial;
 
+/**
+ * Exception for all persistence exceptions.
+ */
+public final class PersistenceException extends Exception {
+
+    @Serial
     private static final long serialVersionUID = 0L;
 
-    public DaoException(final Throwable th) {
+    public PersistenceException(final Throwable th) {
         super(th);
     }
 
