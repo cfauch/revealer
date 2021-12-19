@@ -13,6 +13,20 @@ If you use Maven just add this dependency:
     </dependency>
 ```
 
+If you decide to use postgresql database you have also to include this dependency:
+
+```
+    <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>42.2.7</version>
+    </dependency>
+```
+
+In case of `module.info` you have to import the module with the line:
+`requires com.code.fauch.revealer` and optionally if you use postgresql driver
+you have also to import this module: `requires org.postgresql.jdbc`
+
 ## Getting start
 
 ### Create your business java object
@@ -20,6 +34,12 @@ If you use Maven just add this dependency:
 Define a ` User` object like this:
 
 ```
+package com.fauch.code.test.domain;
+
+import com.code.fauch.revealer.Collection;
+import com.code.fauch.revealer.Field;
+import com.code.fauch.revealer.Id;
+
 @Collection(name="horcrux_users")
 public class User {
 
@@ -77,177 +97,95 @@ Notice the use of the following annotations:
 * `@Field`: to specify the name of the corresponding sql table column.
 * `@Id`: to indicate the unique identifier.
 
-### Now, use it
+### Defines the interface of your service that will manage your business object
 
 ```
-    private static final BeanRWFactory<User> FACTORY = BeanRWFactory.from(User.class);
+package com.fauch.code.test.api;
 
-    public static void main(String[] args) throws DaoException, SQLException {
+import com.code.fauch.revealer.PersistenceException;
+import com.code.fauch.revealer.jdbc.transaction.Jdbc;
+import com.fauch.code.test.domain.User;
+
+public interface IUserService {
+
+    @Jdbc(transactional = true)
+    int save(User user) throws PersistenceException;
+
+}
+```
+
+Annotate all the method of the interface that need a database connection
+with the `@Jdbc(transactional=fale)` annotation. For method that need to be executed
+within transactional use `@Jdbc(transactional=true)` instead.
+
+### Give an implementation of this interface
+
+```
+package com.fauch.code.test.core;
+
+import com.code.fauch.revealer.IDao;
+import com.code.fauch.revealer.PersistenceException;
+import com.fauch.code.test.domain.User;
+import com.fauch.code.test.api.IUserService;
+
+public class UserServiceImpl implements IUserService {
+
+    private final IDao<User> dao;
+
+    public UserServiceImpl(final IDao<User> dao) {
+        this.dao = dao;
+    }
+
+    @Override
+    public int save(final User user) throws PersistenceException {
+        if (user.getId() == null) {
+            return this.dao.insert(user);
+        } else {
+            return this.dao.update(user);
+        }
+    }
+
+}
+```
+
+This implementation use `IDao<User>` to persist the `User` business object created
+earlier.
+
+### Now, use it
+
+* We first build a new DAO to persist `User` object by calling `JdbcFactory.dao(User.class)`.
+* Next, we build a wrapper of the `IUserService` implementation by calling 
+`JdbcFactory.wrap(source, new UserServiceImpl(DAO))`.
+* Finally, we just have to invoke one of the method and a transactional or not connection will be created or not automatically.
+
+```
+    private static final IDao<User> DAO = JdbcFactory.dao(User.class);
+
+    public static void main(String[] args) throws PersistenceException, SQLException {
         final PGSimpleDataSource source = new PGSimpleDataSource();
         source.setUrl("jdbc:postgresql:hx");
         source.setUser("covid19");
         source.setPassword("Qvdm!");
-        try(Connection conn = source.getConnection()) {
-            new SmallJdbcDao<>(FACTORY, conn).insert(new User(null, "porco rosso", "guest"));
-        }
+        IUserService userService = (IUserService) JdbcFactory.wrap(source, new UserServiceImpl(DAO));
+        final User user = new User(null, "porco rosso", "guest");
+        System.out.println("Affected rows:" + userService.save(user));
+        System.out.println("User id:" + user.getId());
     }
 ```
 
-Next open a new session and use `revealer` to obtain the list of all database versions where script is not null.
+### Notes on module-info
+
+If you use module-info, you have to export the package we are defined your annotated classes.
+* the package containing your business object definition (`User`): `com.fauch.code.test.domain`
+* The package containing your service interface (`IUserService`): `package com.fauch.code.test.api`
+
+Here is the module-info used for this example:
 
 ```
-        try(Connection conn = db.openSession()) {
-            for (Version version : new VersionDAO(conn).findAll(BFilter.isNotNull("script"))) {
-                System.out.println(version);
-            }
-        }
-```
-
-Here is the full `main` method:
-
-```
-public static void main(String[] args) throws Exception {
-    final Properties prop = new Properties();
-    prop.setProperty("jdbcUrl", "jdbc:h2:/tmp/hx");
-    prop.setProperty("username", "harry");
-    prop.setProperty("password", "");
-    final Path scripts = Paths.get(Main.class.getResource("/db").toURI());
-    try(DataBase db = DataBase.init("pool").withScripts(scripts).versionTable("HORCRUX_VERSIONS").build(prop)) {
-        db.open(ECreateOption.SCHEMA, ECreateOption.UPGRADE);
-        try(Connection conn = db.openSession()) {
-            for (Version version : new VersionDAO(conn).findAll(BFilter.isNotNull("script"))) {
-                System.out.println(version);
-            }
-        }
-    }
+module test {
+    requires com.code.fauch.revealer;
+    requires org.postgresql.jdbc;
+    exports com.fauch.code.test.domain;
+    exports com.fauch.code.test.api;
 }
-```
-
-## Use requests with revealer
-
-You can use `BRequest` to build and execute requests.
-
-### Select request
-
-1. Create a new `BRequest` with a sql statement template: `new BRequest("select * from %table% where %condition% order by %field%")`
-2. Complete the `Brequest` object with:
-* the `%table%` to update: `.table("HORCRUX_VERSIONS")`
-* the `%condition%`: `.where(BFilter.isNotNull("script"))`
-* the `%field%` to use with the order by: `.field("number")`
-3. Call `make()` with the connection to build the associated `PreparedStatement` and execute the query.
-
-```
-try(DataBase db = DataBase.init("pool").withScripts(scripts).versionTable("HORCRUX_VERSIONS").build(prop)) {
-    db.open(ECreateOption.SCHEMA, ECreateOption.UPGRADE);
-    try(Connection conn = db.openSession()) {
-        try (PreparedStatement statement = new BRequest("select * from %table% where %condition% order by %field%")
-                .table("HORCRUX_VERSIONS")
-                .where(BFilter.isNotNull("script"))
-                .field("number")
-                .make(conn)) {
-            try (ResultSet result = statement.executeQuery()) {
-                while(result.next()) {
-                    System.out.println(
-                            ">> version: " + result.getInt("number") 
-                            + " >> script: " + result.getString("script")
-                            + " >> active: " + result.getBoolean("active")
-                    );
-                }
-            }
-        }
-    }
-}
-
-```
-
-### The insert request
-
-1. Create a new `BRequest` with a sql statement template: `new BRequest("insert into %table% %columns% values %values%")`
-2. Complete the `Brequest` object with:
-* the `%table%` to update: `.table("HORCRUX_VERSIONS")`
-* the `%colulns%`: `.columns("number", "script", "active")`
-* the `%values%` is automatically completed via the columns given earlier.
-3. Call `make()` with the connection to build the associated `PreparedStatement` and fill it before to execute it.
-
-```
-try(DataBase db = DataBase.init("pool").withScripts(scripts).versionTable("HORCRUX_VERSIONS").build(prop)) {
-    db.open(ECreateOption.SCHEMA, ECreateOption.UPGRADE);
-    try(Connection conn = db.openSession()) {
-        try (PreparedStatement statement = new BRequest("insert into %table% %columns% values %values%")
-                .columns("number", "script", "active")
-                .table("HORCRUX_VERSIONS")
-                .make(conn)) {
-            statement.setInt(1, 4);
-            statement.setString(2, "upgrate_to_v4.sql");
-            statement.setBoolean(3, true);
-            statement.executeUpdate();
-        }
-    }
-}
- ```
-
-### The update request
-
-1. Create a new `BRequest` with a sql statement template: `new BRequest("update %table% set %fields% where %condition%")`
-2. Complete the `Brequest` object with:
-* the `%table%`to update: `.table("HORCRUX_VERSIONS")`
-* the `%fields%`to set: `fields("script", "active")`
-* the `%condition%`: `.where(BFilter.isNotNull("script"))`
-3. Call `make()` with the connection to build the associated `PreparedStatement` and fill it before to execute it.
-
-```
-try(DataBase db = DataBase.init("pool").withScripts(scripts).versionTable("HORCRUX_VERSIONS").build(prop)) {
-    db.open(ECreateOption.SCHEMA, ECreateOption.UPGRADE);
-    try(Connection conn = db.openSession()) {
-        try (PreparedStatement statement = new BRequest("update %table% set %fields% where %condition%")
-                .fields("script", "active")
-                .table("HORCRUX_VERSIONS")
-                .where(BFilter.isNotNull("script"))
-                .make(conn)) {
-            statement.setString(1, "upgrate_to_v4.sql");
-            statement.setBoolean(2, true);
-            statement.executeUpdate();
-        }
-    }
-}
-```
-
-## Customize your DAO using requests
-
-The abstract class `AbsDAO` provides methods that takes `BRequest` in argument to customize your DAO:
-
-* `put(final T object, final BRequest req)` to insert or update one object in database
-* `putAll(final Collection<T> objects, final BRequest req)`: to insert several objects
-* `void remove(final BRequest req)`: to remove objects
-* `T get(final BRequest req)`: to retrieve one object from database
-* `List<T> getAll(final BRequest req)`: to retrieve a list of objects
-
-Here is how to retrieve the list all versions from database ordered by a given field.
-
-### Update your DAO definition
-
-1. Update your `VersionDAO` by adding the following sql request template:
-
-```
-private static final String SELECT_ORDER_BY_ID = "SELECT * FROM %table% order by %field%";
-
-```
-2. Create a new method `findOrderBy` to return all versions of the database ordered by a given field:
-
-```
-    public List<User> findOrderBy(final String field) throws SQLException {
-        return getAll(new BRequest(SELECT_ORDER_BY_ID).field(field));
-    }
-```
-
-### Use it
-
-Next open a new session and call `findOrderBy` with `"script"` to obtain the list of all versions of the database ordered by the script.
-
-```
-    try(Connection conn = db.openSession()) {
-        for (Version version : new VersionDAO(conn).findOrderBy("script"))) {
-            System.out.println(version);
-        }
-    }
 ```

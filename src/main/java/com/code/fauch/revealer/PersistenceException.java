@@ -24,6 +24,11 @@ public final class PersistenceException extends Exception {
     @Serial
     private static final long serialVersionUID = 0L;
 
+    /**
+     * Constructor.
+     *
+     * @param th the cause
+     */
     public PersistenceException(final Throwable th) {
         super(th);
     }

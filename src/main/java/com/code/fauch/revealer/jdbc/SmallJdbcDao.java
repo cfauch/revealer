@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * This class defines Small generic DAO.
+ * This class defines a Small generic DAO.
  *
  * @param <T> the type of the bean
  */

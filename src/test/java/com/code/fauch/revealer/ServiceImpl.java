@@ -1,15 +1,13 @@
 package com.code.fauch.revealer;
 
-import com.code.fauch.revealer.jdbc.SmallJdbcDao;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class ServiceImpl implements IService {
 
-    private final SmallJdbcDao<User> dao;
+    private final IDao<User> dao;
 
-    public ServiceImpl(final SmallJdbcDao<User> dao) {
+    public ServiceImpl(final IDao<User> dao) {
         this.dao = dao;
     }
 

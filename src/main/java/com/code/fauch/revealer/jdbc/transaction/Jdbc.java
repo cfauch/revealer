@@ -19,6 +19,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Used this annotation to specify that the method need a database connection and
+ * <code>transactional=true</code> to specify that the method need to be running within transaction.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Jdbc {

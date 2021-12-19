@@ -1,7 +1,6 @@
 package com.code.fauch.revealer.jdbc.transaction;
 
 import com.code.fauch.revealer.*;
-import com.code.fauch.revealer.jdbc.SmallJdbcDao;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -14,7 +13,7 @@ import java.util.List;
 
 public class JdbcFactoryTest {
 
-    private static final SmallJdbcDao<User> DAO = JdbcFactory.dao(User.class);
+    private static final IDao<User> DAO = JdbcFactory.dao(User.class);
     private DataSource ds;
     private IService service;
     private IRaiseError error;

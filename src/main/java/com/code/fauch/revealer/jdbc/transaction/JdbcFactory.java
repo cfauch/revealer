@@ -14,6 +14,7 @@
  */
 package com.code.fauch.revealer.jdbc.transaction;
 
+import com.code.fauch.revealer.IDao;
 import com.code.fauch.revealer.PersistenceException;
 import com.code.fauch.revealer.jdbc.BeanRWFactory;
 import com.code.fauch.revealer.jdbc.SmallJdbcDao;
@@ -28,22 +29,48 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
 
+/**
+ * Main factory to build DAO and service wrappers.
+ */
 public final class JdbcFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcFactory.class);
 
     private static final ThreadLocal<Connection> CURRENT_CONNECTION = ThreadLocal.withInitial(()->null);
 
+    /**
+     * Private inner object used to manage database connection creation.
+     * (Chain of responsibility)
+     */
     private static final class Session {
 
+        /**
+         * The Jdbc data source (not null)
+         */
         private final DataSource ds;
+
+        /**
+         * The object database transaction management (not null).
+         */
         private final Transaction next;
 
+        /**
+         * Constructor.
+         * @param ds the DataSource to build database connection (not null)
+         * @param next the object used to manage transaction (not null)
+         */
         private Session(final DataSource ds, final Transaction next) {
             this.ds = ds;
             this.next = next;
         }
 
+        /**
+         * Evaluate the given method call.
+         * @param delegate the method call object (not null)
+         * @return the result of the method call.
+         * @throws SQLException If something went wrong during database connection open/close
+         * @throws PersistenceException if something went wrong during method evaluation
+         */
         Object eval(final Delegate delegate) throws SQLException, PersistenceException {
             if (CURRENT_CONNECTION.get() == null && delegate.needConnection()) {
                 try(Connection conn = ds.getConnection()) {
@@ -59,8 +86,19 @@ public final class JdbcFactory {
         }
     }
 
+    /**
+     * Private inner object used to manage database transaction.
+     * (chain of responsibility)
+     */
     private static final class Transaction {
 
+        /**
+         * Evaluate the given method call.
+         * @param delegate the method call (not null)
+         * @return the result of the method call
+         * @throws SQLException if something went wrong during transaction management.
+         * @throws PersistenceException if something went wrong during method evaluation
+         */
         Object eval(final Delegate delegate) throws SQLException, PersistenceException {
             final Connection conn = CURRENT_CONNECTION.get();
             if (conn.getAutoCommit() && delegate.needTransaction()) {
@@ -89,6 +127,9 @@ public final class JdbcFactory {
 
     }
 
+    /**
+     * Private inner invocation handler used to route the database connection on the one on the current thread.
+     */
     private static final class CurrentConnection implements InvocationHandler {
 
         @Override
@@ -98,11 +139,28 @@ public final class JdbcFactory {
 
     }
 
+    /**
+     * Private inner invocation handler used to wrap interface method call with connection and within transaction
+     * according to method annotation.
+     */
     private static final class ServiceWrapper implements InvocationHandler {
 
+        /**
+         * The session object responsible to analyse method annotation to create or not
+         * database connections and transactions (not null)
+         */
         private final Session session;
+
+        /**
+         * The real implementation of the interface (not null)
+         */
         private final Object impl;
 
+        /**
+         * Constructor.
+         * @param session the session inner object to use (not null)
+         * @param impl the real implementation to wrap (not null)
+         */
         private ServiceWrapper(final Session session, final Object impl) {
             this.impl = impl;
             this.session = session;
@@ -119,10 +177,17 @@ public final class JdbcFactory {
 
     }
 
+    /**
+     * No constructor.
+     */
     private JdbcFactory() {
         //Nothing to do
     }
 
+    /**
+     * Creates a connection redirection on the current thread.
+     * @return a connection redirection (not null)
+     */
     public static Connection connection() {
         return (Connection) Proxy.newProxyInstance(
                 JdbcFactory.class.getClassLoader(),
@@ -130,12 +195,25 @@ public final class JdbcFactory {
                 new JdbcFactory.CurrentConnection());
     }
 
-    public static <U> SmallJdbcDao<U> dao(final Class<U> cls) {
+    /**
+     * Creates a DAO to persist bean of the given class.
+     * @param cls the class of the bean (not null)
+     * @param <U> the type of the bean
+     * @return the corresponding DAO (not null)
+     */
+    public static <U> IDao<U> dao(final Class<U> cls) {
         return new SmallJdbcDao<>(
                 BeanRWFactory.from(cls),
                 connection());
     }
 
+    /**
+     * Creates a wrapper of the given real object to manage database connections and transactions
+     * automatically.
+     * @param ds the DataSource to use to create needed connections (not null)
+     * @param impl the real implementation to wrap (not null)
+     * @return the just created wrapper (not null)
+     */
     public static Object wrap(final DataSource ds, final Object impl) {
         return Proxy.newProxyInstance(
                 JdbcFactory.class.getClassLoader(),
