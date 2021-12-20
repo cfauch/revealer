@@ -164,8 +164,8 @@ earlier.
     public static void main(String[] args) throws PersistenceException, SQLException {
         final PGSimpleDataSource source = new PGSimpleDataSource();
         source.setUrl("jdbc:postgresql:hx");
-        source.setUser("covid19");
-        source.setPassword("Qvdm!");
+        source.setUser("totoro");
+        source.setPassword("Yolo!");
         IUserService userService = (IUserService) JdbcFactory.wrap(source, new UserServiceImpl(DAO));
         final User user = new User(null, "porco rosso", "guest");
         System.out.println("Affected rows:" + userService.save(user));
