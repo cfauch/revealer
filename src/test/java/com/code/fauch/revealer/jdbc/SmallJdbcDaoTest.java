@@ -104,17 +104,16 @@ public class SmallJdbcDaoTest {
     }
 
     @Test
-    public void testGetAllNegSizeAllRecords() throws SQLException, PersistenceException {
+    public void testGetAllNegSizeError() throws SQLException {
         try(Connection conn = ds.getConnection()) {
-            List<User> founds = new SmallJdbcDao<>(FACTORY, conn).getAll(0, -2);
-            Assertions.assertEquals(4, founds.size());
+            Assertions.assertThrows(IllegalArgumentException.class, ()->new SmallJdbcDao<>(FACTORY, conn).getAll(0, -2));
         }
     }
 
     @Test
     public void testGetAllNegStartAllRecords() throws SQLException, PersistenceException {
         try(Connection conn = ds.getConnection()) {
-            List<User> founds = new SmallJdbcDao<>(FACTORY, conn).getAll(-10, -2);
+            List<User> founds = new SmallJdbcDao<>(FACTORY, conn).getAll(-10, 4);
             Assertions.assertEquals(4, founds.size());
         }
     }

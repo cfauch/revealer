@@ -155,12 +155,15 @@ public class SmallJdbcDao<T> implements IDao<T> {
     /**
      * Search and returns beans with pagination ordered by id.
      * @param start the start id (excluded)
-     * @param size the page size
+     * @param size the page size (>=0)
      * @return the corresponding beans (it may be empty)
      * @throws PersistenceException if SQL or bean access problem
      */
     @Override
     public final List<T> getAll(Object start, int size) throws PersistenceException {
+        if (size < 0) {
+            throw new IllegalArgumentException("size must be >=0");
+        }
         ArrayList<T> founds = new ArrayList<>();
         try (PreparedStatement stmt = this.connection.prepareStatement(this.rwFactory.getFoundAllQuery())) {
             stmt.setObject(1, start);
